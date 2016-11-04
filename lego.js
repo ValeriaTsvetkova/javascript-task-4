@@ -13,13 +13,15 @@ exports.isStar = false;
  * @returns {Array}
  */
 
-var OPERATIONS_PRIORITY = ['filterIn', 'sortBy', 'select', 'format', 'limit'];
+var OPERATIONS_PRIORITY = {
+    'filterIn': 0,
+    'sortBy': 1,
+    'select': 2,
+    'format': 3,
+    'limit': 4 };
 
 exports.query = function (collection) {
-    var copiedCollection = [];
-    collection.forEach(function (friend) {
-        copiedCollection.push(Object.assign({}, friend));
-    });
+    var copiedCollection = copyCollection(collection);
     if (arguments.length === 1) {
         return copiedCollection;
     }
@@ -31,20 +33,27 @@ exports.query = function (collection) {
     return copiedCollection;
 };
 
+function copyCollection(original) {
+    return original.map(function (element) {
+        return Object.assign({}, element);
+    });
+}
+
 function sortOperations(operations) {
     return operations.sort(function (a, b) {
-        return OPERATIONS_PRIORITY.indexOf(a.name) > OPERATIONS_PRIORITY.indexOf(b.name) ? 1 : -1;
+        return OPERATIONS_PRIORITY[a.name] - OPERATIONS_PRIORITY[b.name];
     });
 }
 
 exports.select = function () {
     var properties = [].slice.call(arguments);
 
-    return function select(copiedCollection) {
-        copiedCollection.forEach(function (friend) {
-            (Object.keys(friend)).forEach(function (property) {
+    return function select(collection) {
+        var copiedCollection = collection.slice();
+        copiedCollection.forEach(function (element) {
+            (Object.keys(element)).forEach(function (property) {
                 if (properties.indexOf(property) === -1) {
-                    delete copiedCollection[copiedCollection.indexOf(friend)][property];
+                    delete copiedCollection[copiedCollection.indexOf(element)][property];
                 }
             });
         });
@@ -55,35 +64,34 @@ exports.select = function () {
 };
 
 exports.filterIn = function (property, values) {
-    return function filterIn(copiedCollection) {
-        return copiedCollection.filter(function (friend) {
+    return function filterIn(collection) {
+        return collection.filter(function (element) {
             return values.some(function (value) {
-                return value === friend[property];
+                return value === element[property];
             });
         });
     };
 };
 
 exports.sortBy = function (property, order) {
-    return function sortBy(copiedCollection) {
-        return copiedCollection.sort(function (a, b) {
-            if (order === 'asc') {
-                return a[property] > b[property] ? 1 : -1;
-            }
+    return function sortBy(collection) {
+        var copiedCollection = copyCollection(collection);
 
-            return a[property] > b[property] ? -1 : 1;
+        return copiedCollection.sort(function (a, b) {
+            return order === 'asc' ? a[property] - b[property] : a[property] - b[property];
         });
     };
 };
 
 exports.format = function (property, formatter) {
-    return function format(copiedCollection) {
-        copiedCollection.forEach(function (friend) {
-            if (friend.hasOwnProperty(property)) {
-                friend[property] = formatter(friend[property]);
+    return function format(collection) {
+        var copiedCollection = copyCollection(collection);
+        copiedCollection.forEach(function (element) {
+            if (element.hasOwnProperty(property)) {
+                element[property] = formatter(element[property]);
             }
 
-            return friend;
+            return element;
         });
 
         return copiedCollection;
@@ -91,8 +99,8 @@ exports.format = function (property, formatter) {
 };
 
 exports.limit = function (count) {
-    return function limit(copiedCollection) {
-        return copiedCollection.slice(0, count);
+    return function limit(collection) {
+        return collection.slice(0, count);
     };
 };
 
