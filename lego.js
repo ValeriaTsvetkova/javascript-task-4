@@ -78,7 +78,10 @@ exports.sortBy = function (property, order) {
         var copiedCollection = copyCollection(collection);
 
         return copiedCollection.sort(function (a, b) {
-            return order === 'asc' ? a[property] - b[property] : a[property] - b[property];
+            var resultForASC = a[property] > b[property] ? 1 : -1;
+            var resultForDESC = a[property] > b[property] ? -1 : 1;
+
+            return order === 'asc' ? resultForASC : resultForDESC;
         });
     };
 };
