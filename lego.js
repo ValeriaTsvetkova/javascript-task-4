@@ -15,10 +15,12 @@ exports.isStar = true;
 
 var OPERATIONS_PRIORITY = {
     'filterIn': 0,
-    'sortBy': 1,
-    'select': 2,
-    'format': 3,
-    'limit': 4 };
+    'or': 1,
+    'and': 2,
+    'sortBy': 3,
+    'select': 4,
+    'format': 5,
+    'limit': 6 };
 
 exports.query = function (collection) {
     var copiedCollection = copyCollection(collection);
@@ -134,4 +136,5 @@ if (exports.isStar) {
             return collection;
         };
     };
+
 }
