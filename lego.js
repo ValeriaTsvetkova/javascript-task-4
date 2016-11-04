@@ -4,7 +4,7 @@
  * Сделано задание на звездочку
  * Реализованы методы or и and
  */
-exports.isStar = false;
+exports.isStar = true;
 
 /**
  * Запрос к коллекции
@@ -111,11 +111,27 @@ if (exports.isStar) {
 
 
     exports.or = function () {
-        return;
+        var criterions = [].slice.call(arguments);
+
+        return function or(collection) {
+            return collection.filter(function (element) {
+                return criterions.some(function (criterion) {
+                    return (criterion(collection).indexOf(element) !== -1);
+                });
+            });
+        };
     };
 
 
     exports.and = function () {
-        return;
+        var criterions = [].slice.call(arguments);
+
+        return function and(collection) {
+            criterions.forEach(function (criterion) {
+                collection = criterion(collection);
+            });
+
+            return collection;
+        };
     };
 }
