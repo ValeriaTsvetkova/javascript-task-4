@@ -117,7 +117,7 @@ if (exports.isStar) {
         return function or(collection) {
             return collection.filter(function (element) {
                 return criterions.some(function (criterion) {
-                    return (criterion(collection).indexOf(element) !== -1);
+                    return (criterion([element]).indexOf(element) !== -1);
                 });
             });
         };
