@@ -51,26 +51,25 @@ exports.select = function () {
     var properties = [].slice.call(arguments);
 
     return function select(collection) {
-        var copiedCollection = collection.slice();
-        copiedCollection.forEach(function (element) {
+        var copiedCollection = [];
+        collection.forEach(function (element) {
+            var person = {};
             (Object.keys(element)).forEach(function (property) {
-                if (properties.indexOf(property) === -1) {
-                    delete copiedCollection[copiedCollection.indexOf(element)][property];
+                if (properties.indexOf(property) !== -1) {
+                    person[property] = element[property];
                 }
             });
+            copiedCollection.push(person);
         });
 
         return copiedCollection;
     };
-
 };
 
 exports.filterIn = function (property, values) {
     return function filterIn(collection) {
         return collection.filter(function (element) {
-            return values.some(function (value) {
-                return value === element[property];
-            });
+            return values.indexOf(element[property]) !== -1;
         });
     };
 };
@@ -78,12 +77,10 @@ exports.filterIn = function (property, values) {
 exports.sortBy = function (property, order) {
     return function sortBy(collection) {
         var copiedCollection = copyCollection(collection);
+        var orderValue = order === 'asc' ? 1 : -1;
 
         return copiedCollection.sort(function (a, b) {
-            var resultForASC = a[property] > b[property] ? 1 : -1;
-            var resultForDESC = a[property] > b[property] ? -1 : 1;
-
-            return order === 'asc' ? resultForASC : resultForDESC;
+            return (a[property] > b[property] ? 1 : -1) * orderValue;
         });
     };
 };
@@ -105,7 +102,9 @@ exports.format = function (property, formatter) {
 
 exports.limit = function (count) {
     return function limit(collection) {
-        return collection.slice(0, count);
+        var copiedCollection = copyCollection(collection);
+
+        return copiedCollection.slice(0, count);
     };
 };
 
