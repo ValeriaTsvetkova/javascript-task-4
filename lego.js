@@ -6,13 +6,6 @@
  */
 exports.isStar = true;
 
-/**
- * Запрос к коллекции
- * @param {Array} collection
- * @params {...Function} – Функции для запроса
- * @returns {Array}
- */
-
 var OPERATIONS_PRIORITY = {
     'filterIn': 0,
     'or': 1,
@@ -20,19 +13,26 @@ var OPERATIONS_PRIORITY = {
     'sortBy': 3,
     'select': 4,
     'format': 5,
-    'limit': 6 };
+    'limit': 6
+};
 
+/**
+ * Запрос к коллекции
+ * @param {Array} collection
+ * @params {...Function} – Функции для запроса
+ * @returns {Array}
+ */
 exports.query = function (collection) {
     var copiedCollection = copyCollection(collection);
     if (arguments.length === 1) {
         return copiedCollection;
     }
     var operations = sortOperations([].slice.call(arguments, 1));
-    operations.forEach(function (operation) {
-        copiedCollection = operation(copiedCollection);
-    });
 
-    return copiedCollection;
+    return operations.reduce(function (current, operation) {
+        return operation(current);
+    }, copiedCollection);
+
 };
 
 function copyCollection(original) {
@@ -47,25 +47,34 @@ function sortOperations(operations) {
     });
 }
 
+/**
+ * Выбор полей
+ * @params {...String}
+ * @returns {Function}
+ */
 exports.select = function () {
     var properties = [].slice.call(arguments);
 
     return function select(collection) {
-        var copiedCollection = [];
-        collection.forEach(function (element) {
+        return collection.map(function (element) {
             var person = {};
-            (Object.keys(element)).forEach(function (property) {
-                if (properties.indexOf(property) !== -1) {
+            properties.forEach(function (property) {
+                if (Object.keys(element).indexOf(property) !== -1) {
                     person[property] = element[property];
                 }
             });
-            copiedCollection.push(person);
-        });
 
-        return copiedCollection;
+            return person;
+        });
     };
 };
 
+/**
+ * Фильтрация поля по массиву значений
+ * @param {String} property – Свойство для фильтрации
+ * @param {Array} values – Доступные значения
+ * @returns {Function}
+ */
 exports.filterIn = function (property, values) {
     return function filterIn(collection) {
         return collection.filter(function (element) {
@@ -74,6 +83,12 @@ exports.filterIn = function (property, values) {
     };
 };
 
+/**
+ * Сортировка коллекции по полю
+ * @param {String} property – Свойство для фильтрации
+ * @param {String} order – Порядок сортировки (asc - по возрастанию; desc – по убыванию)
+ * @returns {Function}
+ */
 exports.sortBy = function (property, order) {
     return function sortBy(collection) {
         var copiedCollection = copyCollection(collection);
@@ -85,6 +100,12 @@ exports.sortBy = function (property, order) {
     };
 };
 
+/**
+ * Форматирование поля
+ * @param {String} property – Свойство для фильтрации
+ * @param {Function} formatter – Функция для форматирования
+ * @returns {Function}
+ */
 exports.format = function (property, formatter) {
     return function format(collection) {
         var copiedCollection = copyCollection(collection);
@@ -100,6 +121,11 @@ exports.format = function (property, formatter) {
     };
 };
 
+/**
+ * Ограничение количества элементов в коллекции
+ * @param {Number} count – Максимальное количество элементов
+ * @returns {Function}
+ */
 exports.limit = function (count) {
     return function limit(collection) {
         var copiedCollection = copyCollection(collection);
@@ -110,20 +136,30 @@ exports.limit = function (count) {
 
 if (exports.isStar) {
 
-
+    /**
+     * Фильтрация, объединяющая фильтрующие функции
+     * @star
+     * @params {...Function} – Фильтрующие функции
+     * @returns {Array}
+     */
     exports.or = function () {
         var criterions = [].slice.call(arguments);
 
         return function or(collection) {
             return collection.filter(function (element) {
                 return criterions.some(function (criterion) {
-                    return (criterion([element]).indexOf(element) !== -1);
+                    return criterion([element]).indexOf(element) !== -1;
                 });
             });
         };
     };
 
-
+    /**
+     * Фильтрация, пересекающая фильтрующие функции
+     * @star
+     * @params {...Function} – Фильтрующие функции
+     * @returns {Array}
+     */
     exports.and = function () {
         var criterions = [].slice.call(arguments);
 
